@@ -1,0 +1,115 @@
+{
+  "entities": {
+    "Tenant": {
+      "title": "Tenant",
+      "description": "A client company in the BPO platform",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "taxId": { "type": "string" },
+        "logoUrl": { "type": "string", "description": "URL of the client's custom logo" },
+        "brandColor": { "type": "string", "description": "Hex code for the client's primary brand color" },
+        "serviceModel": { "type": "string", "enum": ["SaaS", "BPO"] },
+        "modules": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "serviceModel"]
+    },
+    "User": {
+      "title": "User",
+      "description": "System user (Employee or Admin)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tenantId": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["GLOBAL_ADMIN", "COMPANY_ADMIN", "EMPLOYEE"] },
+        "name": { "type": "string" },
+        "dni": { "type": "string" },
+        "managerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "tenantId", "email", "role"]
+    },
+    "Document": {
+      "title": "Document",
+      "description": "Employee documents (payslips, etc.)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tenantId": { "type": "string" },
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["PAYSLIP", "CONTRACT", "OTHER"] },
+        "status": { "type": "string", "enum": ["PENDING", "SIGNED"] },
+        "fileUrl": { "type": "string" },
+        "fileName": { "type": "string" },
+        "signature": {
+          "type": "object",
+          "properties": {
+            "hash": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "ip": { "type": "string" }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "tenantId", "userId", "type", "status"]
+    },
+    "Absence": {
+      "title": "Absence",
+      "description": "Time off requests",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tenantId": { "type": "string" },
+        "userId": { "type": "string" },
+        "type": { "type": "string" },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] },
+        "reason": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "tenantId", "userId", "startDate", "endDate", "status"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Company news and formal notifications",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tenantId": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "isFormal": { "type": "boolean" },
+        "requiredSignature": { "type": "boolean" },
+        "authorId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "tenantId", "title", "content"]
+    }
+  },
+  "firestore": {
+    "/tenants/{tenantId}": {
+      "schema": "Tenant",
+      "description": "Client companies"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Platform users"
+    },
+    "/documents/{docId}": {
+      "schema": "Document",
+      "description": "Payslips and signed documents"
+    },
+    "/absences/{absenceId}": {
+      "schema": "Absence",
+      "description": "Vacation and leave requests"
+    },
+    "/announcements/{announcementId}": {
+      "schema": "Announcement",
+      "description": "Company feed posts"
+    }
+  }
+}

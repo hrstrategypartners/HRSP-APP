@@ -1,0 +1,111 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: tenants
+    // Fields: id, name, taxId, serviceModel (SaaS|BPO), modules (list), createdAt
+    //
+    // Collection: users
+    // Fields: id, tenantId, email, role (GLOBAL_ADMIN|COMPANY_ADMIN|EMPLOYEE), name, dni, managerId, createdAt
+    //
+    // Collection: documents
+    // Fields: id, tenantId, userId, type (PAYSLIP|CONTRACT), status (PENDING|SIGNED), fileUrl, fileName, signature (map), createdAt
+    //
+    // Collection: absences
+    // Fields: id, tenantId, userId, type, startDate, endDate, status (PENDING|APPROVED|REJECTED), reason, createdAt
+    //
+    // Collection: announcements
+    // Fields: id, tenantId, title, content, isFormal, requiredSignature, authorId, createdAt
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isGlobalAdmin() {
+      return isAuthenticated() && (
+        getUserData().role == 'GLOBAL_ADMIN' ||
+        (request.auth.token.email == "hrstrategypartners2.0@gmail.com" && request.auth.token.email_verified == true)
+      );
+    }
+
+    function isCompanyAdmin(tenantId) {
+      let userData = getUserData();
+      return isAuthenticated() && userData.tenantId == tenantId && userData.role == 'COMPANY_ADMIN';
+    }
+
+    function isTenantMember(tenantId) {
+      return isAuthenticated() && getUserData().tenantId == tenantId;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    // Tenants
+    match /tenants/{tenantId} {
+      allow read: if isAuthenticated() && (isGlobalAdmin() || isTenantMember(tenantId));
+      allow write: if isGlobalAdmin();
+    }
+
+    // Users
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isGlobalAdmin() || isOwner(userId) || isCompanyAdmin(resource.data.tenantId));
+      allow create: if isAuthenticated() && (isGlobalAdmin() || (isCompanyAdmin(request.resource.data.tenantId) && request.resource.data.role != 'GLOBAL_ADMIN'));
+      allow update: if isAuthenticated() && (
+        isGlobalAdmin() || 
+        (isOwner(userId) && request.resource.data.role == resource.data.role && request.resource.data.tenantId == resource.data.tenantId) ||
+        (isCompanyAdmin(resource.data.tenantId) && request.resource.data.role != 'GLOBAL_ADMIN')
+      );
+    }
+
+    // Documents
+    match /documents/{docId} {
+      allow read: if isAuthenticated() && (isGlobalAdmin() || isOwner(resource.data.userId) || isCompanyAdmin(resource.data.tenantId));
+      allow create: if isAuthenticated() && (isGlobalAdmin() || isCompanyAdmin(request.resource.data.tenantId));
+      allow update: if isAuthenticated() && (
+        isGlobalAdmin() || 
+        (isOwner(resource.data.userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'signature'])) ||
+        isCompanyAdmin(resource.data.tenantId)
+      );
+    }
+
+    // Absences
+    match /absences/{absenceId} {
+      allow read: if isAuthenticated() && (isGlobalAdmin() || isOwner(resource.data.userId) || isCompanyAdmin(resource.data.tenantId));
+      allow create: if isAuthenticated() && (isGlobalAdmin() || isOwner(request.resource.data.userId) || isCompanyAdmin(request.resource.data.tenantId));
+      allow update: if isAuthenticated() && (isGlobalAdmin() || isCompanyAdmin(resource.data.tenantId));
+    }
+
+    // Announcements
+    match /announcements/{annId} {
+      allow read: if isAuthenticated() && (isGlobalAdmin() || isTenantMember(resource.data.tenantId));
+      allow write: if isAuthenticated() && (isGlobalAdmin() || isCompanyAdmin(request.resource.data.tenantId));
+    }
+  }
+}

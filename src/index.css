@@ -1,0 +1,59 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+  
+  /* Brand Palette */
+  --color-brand-navy: #0C1630;    /* Exact color requested */
+  --color-brand-blue: #4169E1;
+  --color-brand-magenta: #D9027D;
+  --color-brand-text-muted: #8E9299;
+
+  /* Pantone Palette */
+  --color-pantone-2767: #0C1630;
+  --color-pantone-2728: #4169E1;
+  --color-pantone-7712: #007A87;
+  --color-pantone-2665: #8A63D2;
+  --color-pantone-232: #D9027D;
+  
+  /* Dynamic White Label Variables */
+  --color-dynamic-primary: var(--primary-color, #4169E1);
+  --color-dynamic-accent: var(--accent-color, #007A87);
+  
+  --color-neutral-bg: #F8F9FA;
+}
+
+@layer base {
+  body {
+    @apply bg-neutral-bg text-brand-navy antialiased selection:bg-dynamic-primary/20;
+  }
+}
+
+@layer components {
+  .executive-card {
+    @apply bg-white border border-stone-200/40 rounded-[2px] shadow-[0_4px_20px_-5px_rgba(12,22,48,0.05)] hover:shadow-[0_25px_50px_-12px_rgba(12,22,48,0.08)] transition-all duration-500;
+  }
+  
+  .btn-primary {
+    @apply text-white px-8 py-3.5 rounded-[2px] font-bold text-[10px] uppercase tracking-[0.2em] hover:brightness-110 transition-all shadow-md active:scale-[0.98] flex items-center justify-center gap-2;
+    background: linear-gradient(135deg, var(--primary-color, #4169E1) 0%, var(--accent-color, #007A87) 100%);
+  }
+
+  .tag-urgent {
+    @apply bg-pantone-232 text-white px-2 py-0.5 rounded-[1px] text-[9px] font-bold uppercase tracking-wider;
+  }
+
+  .brand-gradient-text {
+    background: linear-gradient(to right, var(--accent-color, #4169E1), var(--primary-color, #D9027D));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .logo-circle {
+    @apply w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-lg;
+    background: linear-gradient(135deg, var(--accent-color, #4169E1) 0%, var(--primary-color, #D9027D) 100%);
+  }
+}
+
